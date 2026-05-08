@@ -1,9 +1,9 @@
-# Parocyber-lab-replication
 
-## ParoCyber Ethical Hacking Class - Lab Replication
+
+## ParoCyber Ethical Hacking Class 
 
 -----
-## Lab Overview
+## Overview
 
 This lab replicates the Saturday session covering active reconnaissance, exploitation using Metasploit, and post-exploitation techniques including password cracking.
 
